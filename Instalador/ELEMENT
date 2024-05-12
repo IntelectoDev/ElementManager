@@ -340,44 +340,47 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-config_bashrc() {
-    local print_element_banner='print_element_banner() {
-        local version=$(cat /etc/ElementManager/version 2>/dev/null)
-        local mess1="$(less -f /etc/ElementManager/message.txt)"
-        local WHITE="\033[1;37m"
-        local GREEN="\033[32m"
-        local RED="\033[1;31m"
-        local YELLOW="\033[33m"
-        echo -e "${RED}"
-        echo -e "\033[1;31m————————————————————————————————————————————————————"
-        echo -e "\033[1;93m════════════════════════════════════════════════════"
-        echo -e "         _/|       |\_" | lolcat
-        echo -e "        /  |       |  \\" | lolcat
-        echo -e "       |    \     /    |" | lolcat
-        echo -e "       |  \ /     \ /  |" | lolcat
-        echo -e "       | \  |     |  / |" | lolcat
-        echo -e "       | \ _\_/^\_/_ / |" | lolcat
-        echo -e "       |    --\//--    |" | lolcat
-        echo -e "        \_\ ELEMENT / _/" | lolcat
-        echo -e "          \__  |  __/" | lolcat
-        echo -e "             \ _ /   \033[92m -->> SCRIPT:\033[93m Element Manager " | lolcat
-        echo -e "            _/   \_  \033[92m -->> DEVELOPER:\033[93m @Near365 " | lolcat
-        echo -e "           / _/|\_ \ \033[92m -->> VERSIÓN:\033[93m ${version:-N/A}" | lolcat
-        echo -e "           /   |  \  \033[92m -->> FIRMA:\033[93m ${mess1:-N/A}" | lolcat
-        echo -e "             / v \   " | lolcat
-        echo "" | lolcat
-        echo -e "\033[1;93m════════════════════════════════════════════════════"
-        echo -e "\033[1;31m————————————————————————————————————————————————————"
-        echo "" | lolcat
-        echo -e "\033[1;97m ❗️ PARA MOSTRAR PANEL ESCRIBA ❗️\033[92m element "
-        echo -e "wget -O /etc/ElementManager/temp/version_actual https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Version &>/dev/null"
+print_element_banner() {
+    local version=$(cat /etc/ElementManager/version 2>/dev/null)
+    local mess1="$(less -f /etc/ElementManager/message.txt)"
+    local WHITE="\033[1;37m"
+    local RED="\033[1;31m"
+    echo -e "${RED}"
+    echo -e "\033[1;31m————————————————————————————————————————————————————"
+    echo -e "\033[1;93m════════════════════════════════════════════════════"
+    echo -e "         _/|       |\_" | lolcat
+    echo -e "        /  |       |  \\" | lolcat
+    echo -e "       |    \     /    |" | lolcat
+    echo -e "       |  \ /     \ /  |" | lolcat
+    echo -e "       | \  |     |  / |" | lolcat
+    echo -e "       | \ _\_/^\_/_ / |" | lolcat
+    echo -e "       |    --\//--    |" | lolcat
+    echo -e "        \_\ ELEMENT / _/" | lolcat
+    echo -e "          \__  |  __/" | lolcat
+    echo -e "             \ _ /   \033[92m -->> SCRIPT:\033[93m Element Manager " | lolcat
+    echo -e "            _/   \_  \033[92m -->> DEVELOPER:\033[93m @Near365 " | lolcat
+    echo -e "           / _/|\_ \ \033[92m -->> VERSIÓN:\033[93m ${version:-N/A}" | lolcat
+    echo -e "           /   |  \  \033[92m -->> FIRMA:\033[93m ${mess1:-N/A}" | lolcat
+    echo -e "             / v \   " | lolcat
+    echo "" | lolcat
+    echo -e "\033[1;93m════════════════════════════════════════════════════"
+    echo -e "\033[1;31m————————————————————————————————————————————————————"
+    echo "" | lolcat
+    echo -e "\033[1;97m ❗️ PARA MOSTRAR PANEL ESCRIBA ❗️\033[92m element "
+    echo -e "wget -O /etc/ElementManager/temp/version_actual https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Version &>/dev/null"
 }
-print_element_banner
-'
-   if  ! grep -q "print_element_banner" <<< "$(declare -F)";then
-        echo -e "${print_element_banner}" >> "$userfolder/.bashrc"
+
+config_bashrc() {
+    local userfolder="/root"
+    if ! grep -q "print_element_banner" <<< "$(declare -F)"; then
+        echo -e "$(declare -f print_element_banner)" >> "$userfolder/.bashrc"
     fi
 }
+
+#print_element_banner
+#config_bashrc
+
+
 
 instalador_final() {
   tput cuu1 && tput dl1
