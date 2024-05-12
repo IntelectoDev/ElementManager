@@ -396,32 +396,32 @@ instalador_final() {
    echo "exit 0" >>/etc/rc.local
   
   msgi -bar2
-   echo 'clear && clear' >>.bashrc
-   echo 'rebootnb login >/dev/null 2>&1' >>.bashrc
-   echo -e "\033[1;31m————————————————————————————————————————————————————" >>.bashrc
-   echo -e "\033[1;93m════════════════════════════════════════════════════" >>.bashrc
-   echo 'mess1="$(less -f /etc/ElementManager/message.txt)"' >>.bashrc
-   echo -e 'echo -e "         _/|       |\_" | lolcat' >>.bashrc
-   echo -e 'echo -e "        /  |       |  \\" | lolcat' >>.bashrc
-   echo -e 'echo -e "       |    \     /    |" | lolcat' >>.bashrc
-   echo -e 'echo -e "       |  \ /     \ /  |" | lolcat' >>.bashrc
-   echo -e 'echo -e "       | \  |     |  / |" | lolcat' >>.bashrc
-   echo -e 'echo -e "       | \ _\_/^\_/_ / |" | lolcat' >>.bashrc
-   echo -e 'echo -e "       |    --\//--    |" | lolcat' >>.bashrc
-   echo -e 'echo -e "        \_\ ELEMENT / _/" | lolcat' >>.bashrc
-   echo -e 'echo -e "          \__  |  __/" | lolcat' >>.bashrc
-   echo -e 'echo -e "             \ _ /" | lolcat' >>.bashrc
-   echo -e 'echo -e "            _/   \_   \033[92m -->> SCRIPT:\033[93m Element Manager " | lolcat' >>.bashrc
-   echo -e 'echo -e "           / _/|\_ \  \033[92m -->> DEVELOPER:\033[93m @Near365 " | lolcat' >>.bashrc
-   echo -e 'echo -e "           /   |  \   \033[92m -->> FIRMA:\033[93m $mess1" | lolcat' >>.bashrc
-   echo -e 'echo -e "             / v \   " | lolcat' >>.bashrc
-   echo '' >>.bashrc
-   echo -e "\033[1;93m════════════════════════════════════════════════════" >>.bashrc
-   echo -e "\033[1;31m————————————————————————————————————————————————————" >>.bashrc
-   echo '' >>.bashrc
-   echo -e "\033[1;97m ❗️ PARA MOSTRAR PANEL ESCRIBA ❗️\033[92m menu " >>.bashrc
-   echo 'wget -O /etc/ElementManager/temp/version_actual https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Version &>/dev/null' >>.bashrc
-  
+  echo 'clear && clear' >> .bashrc
+  echo 'rebootnb login >/dev/null 2>&1' >> .bashrc
+  echo -e "\033[1;31m————————————————————————————————————————————————————" >> .bashrc
+  echo -e "\033[1;93m════════════════════════════════════════════════════" >> .bashrc
+  echo 'mess1="$(less -f /etc/ElementManager/message.txt)"' >> .bashrc
+  echo -e 'echo -e "         _/|       |\_" | lolcat' >> .bashrc
+  echo -e 'echo -e "        /  |       |  \\" | lolcat' >> .bashrc
+  echo -e 'echo -e "       |    \     /    |" | lolcat' >> .bashrc
+  echo -e 'echo -e "       |  \ /     \ /  |" | lolcat' >> .bashrc
+  echo -e 'echo -e "       | \  |     |  / |" | lolcat' >> .bashrc
+  echo -e 'echo -e "       | \ _\_/^\_/_ / |" | lolcat' >> .bashrc
+  echo -e 'echo -e "       |    --\//--    |" | lolcat' >> .bashrc
+  echo -e 'echo -e "        \_\ ELEMENT / _/" | lolcat' >> .bashrc
+  echo -e 'echo -e "          \__  |  __/" | lolcat' >> .bashrc
+  echo -e 'echo -e "             \ _ /" | lolcat' >> .bashrc
+  echo -e 'echo -e "            _/   \_   \033[92m -->> SCRIPT:\033[93m Element Manager " | lolcat' >> .bashrc
+  echo -e 'echo -e "           / _/|\_ \  \033[92m -->> DEVELOPER:\033[93m @Near365 " | lolcat' >> .bashrc
+  echo -e 'echo -e "           /   |  \   \033[92m -->> FIRMA:\033[93m $mess1" | lolcat' >> .bashrc
+  echo -e 'echo -e "             / v \   " | lolcat' >> .bashrc
+  echo '' >> .bashrc
+  echo -e "\033[1;93m════════════════════════════════════════════════════" >> .bashrc
+  echo -e "\033[1;31m————————————————————————————————————————————————————" >> .bashrc
+  echo '' >> .bashrc
+  echo -e "\033[1;97m ❗️ PARA MOSTRAR PANEL ESCRIBA ❗️\033[92m menu " >> .bashrc
+  echo 'wget -O /etc/ElementManager/temp/version_actual https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Version &>/dev/null' >> .bashrc
+
   # Crear enlaces simbólicos para menu y MENU
    echo "${SCPdir}/menu.sh" >/usr/bin/menu && chmod +x /usr/bin/menu
    echo "${SCPdir}/menu.sh" >/usr/bin/MENU && chmod +x /usr/bin/MENU
@@ -452,9 +452,9 @@ instalador_final() {
     tput cuu1 && tput dl1
     
     msgi -bar2
-    echo -e " \033[1;93m              REGISTRO COMPLETO "
-    echo -e " \033[1;97m       COMANDO PRINCIPAL PARA ENTRAR AL PANEL "
-    echo -e "                   \033[1;41m  menu o MENU  \033[0;37m                 " && msgi -bar2
+    echo -e " \033[1;93m                REGISTRO COMPLETO "
+    echo -e " \033[1;97m      COMANDO PRINCIPAL PARA ENTRAR AL PANEL "
+    echo -e "                  \033[1;41m menu o MENU \033[0;37m                 " && msgi -bar2
   fi
   
   get_public_ip() {
