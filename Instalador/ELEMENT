@@ -501,6 +501,17 @@ verify_license() {
    echo "$response"
 }
 
+# Función para simular la verificación de la licencia
+verify_license_test() {
+    local license_key="$1"
+    # Simulación de respuesta del servidor
+    if [[ "$license_key" == "near" ]]; then
+        echo "Licencia válida"
+    else
+        echo "Licencia inválida"
+    fi
+}
+
 check_key() {
   clear && clear
   msgi -bar2
@@ -526,7 +537,7 @@ check_key() {
   echo -ne "\033[1;96m          >>> INTRODUZCA LA KEY ABAJO <<<\n\033[1;31m        " && read LICENSE_KEY
 
   # Realizar la verificación de la licencia
-  RESPONSE=$(verify_license "$LICENSE_KEY")
+  RESPONSE=$(verify_license_test "$LICENSE_KEY")
   # Analizar la respuesta del servidor
   if [[ $RESPONSE == *"Licencia válida"* ]]; then
       #success_msg "La licencia es válida. Continuando con la instalación..."
