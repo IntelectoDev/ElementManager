@@ -377,114 +377,86 @@ print_element_banner
 instalador_final() {
   tput cuu1 && tput dl1
   tput cuu1 && tput dl1
-  echo -e "     \033[1;4;32mLA KEY ES VÁLIDA, FINALIZANDO INSTALACIÓN \033[0;39m"
-  
+  echo -e "     \033[1;4;32mLA KEY ES VALIDA FINALIZANDO INSTALACION \033[0;39m"
   ##-->> ACOPLANDO INSTALL EN /BIN
-    wget -qO /usr/bin/ELEMENT https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Instalador/ELEMENT
-    chmod +x /usr/bin/ELEMENT
-  
+  wget /root/LATAM https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Instalador/LATAM -O /usr/bin/LATAM &>/dev/null
+  chmod +x /usr/bin/LATAM
   ##-->> LIMPIAR BASHRC
-    /bin/cp /etc/skel/.bashrc ~/
-  
-  ##-->> DESCARGAR ARCHIVOS
-    cd /etc || exit
-    wget -q https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/ElementManager.tar.gz
-    tar -xf ElementManager.tar.gz >/dev/null 2>&1
-    chmod +x ElementManager.tar.gz >/dev/null 2>&1
-    rm -rf ElementManager.tar.gz
-    cd - || exit
-  
-  ##-->> ADAPTAR ESLOGAN
-    wget -qO /etc/ElementManager/message.txt https://raw.githubusercontent.com/IntelectoDev/ElementManager/ElementManager/master/message.txt
-    local SCPinstal="$HOME/install"
-    local Filbot="${SCPdir}/botmanager"
-    local Filpy="${SCPdir}/filespy"
-    local Filotros="${SCPdir}/temp"
-    local IP=$(cat /root/.ssh/authorized_key.reg)
-
-  
-  ### INSTALAR VERSIÓN DE SCRIPT
-    local version_url="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Version"
-    wget -qO "$SCPdir/temp/version_instalacion" "$version_url"
-  
-    local FIns=$(date '+%D-%H:%M:%S')
-    echo "$FIns" >/etc/ElementManager/F-Instalacion
-  
-    local last_check_file="/etc/ElementManager/temp/last_check"
-    date "+%Y-%m-%d %H:%M:%S" >"$last_check_file"
-  
-  # Descargar y configurar ejecutables
-   wget -qO /bin/rebootnb https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Ejecutables/rebootnb.sh
-   chmod +x /bin/rebootnb
-
-   wget -qO /bin/autoinicios https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Ejecutables/autoinicios
-   chmod +rwx /bin/autoinicios
-
-   wget -qO /etc/systemd/system/inicioelement.service https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Ejecutables/inicioelement.service
-   sudo systemctl enable -q inicioelement.service
-
-   wget -qO /bin/check-update https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Ejecutables/check-update
-   chmod +rwx /bin/check-update
-
-   wget -qO "$SCPdir/temp/version_actual" "$version_url"
-
+  /bin/cp /etc/skel/.bashrc ~/
+  ##-->> DESCARGAR FICHEROS
+  cd /etc
+  wget https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/ElementManager.tar.gz >/dev/null 2>&1
+  tar -xf ElementManager.tar.gz >/dev/null 2>&1
+  chmod +x ElementManager.tar.gz >/dev/null 2>&1
+  rm -rf ElementManager.tar.gz
+  cd
+  ##-->> ADPTAR SLOGAN
+  wget -O /etc/ElementManager/message.txt https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/ElementManager/message.txt &>/dev/null
+  SCPdir="/etc/ElementManager"
+  SCPinstal="$HOME/install"
+  Filbot="${SCPdir}/botmanager"
+  Filpy="${SCPdir}/filespy"
+  Filotros="${SCPdir}/temp"
+  IP=$(cat /root/.ssh/authrized_key.reg)
+  ### INSTALAR VERSION DE SCRIPT
+  v1=$(curl -sSL "https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Version")
+  echo "$v1" >/etc/ElementManager/temp/version_instalacion
+  FIns=$(printf '%(%D-%H:%M:%S)T')
+  echo "$FIns" >/etc/ElementManager/F-Instalacion
+  last_check_file="/etc/ElementManager/temp/last_check"
+  date "+%Y-%m-%d %H:%M:%S" >"$last_check_file"
+  wget -O /bin/rebootnb https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Ejecutables/rebootnb.sh &>/dev/null
+  chmod +x /bin/rebootnb
+  wget -O /bin/autoinicios https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Ejecutables/autoinicios &>/dev/null
+  chmod +rwx /bin/autoinicios
+  wget -O /etc/systemd/system/iniciolatam.service https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Ejecutables/iniciolatam.service &>/dev/null
+  sudo systemctl enable -q iniciolatam.service
+  wget -O /bin/check-update https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Ejecutables/check-update &>/dev/null
+  chmod +rwx /bin/check-update
+  wget -O /etc/ElementManager/temp/version_actual https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Version &>/dev/null
    echo '#!/bin/sh -e' >/etc/rc.local
-   sudo chmod +x /etc/rc.local
-   echo "sudo rebootnb reboot" >>/etc/rc.local
-   echo "sleep 2s" >>/etc/rc.local
-   echo "exit 0" >>/etc/rc.local
-  
+    sudo chmod +x /etc/rc.local
+    echo "sudo rebootnb reboot" >>/etc/rc.local
+    echo "sleep 2s" >>/etc/rc.local
+    echo "exit 0" >>/etc/rc.local
   msgi -bar2
   config_bashrc
-  # Crear enlaces simbólicos para menu y MENU
-   echo "${SCPdir}/menu.sh" >/usr/bin/menu && chmod +x /usr/bin/menu
-   echo "${SCPdir}/menu.sh" >/usr/bin/MENU && chmod +x /usr/bin/MENU
-
-   # Guardar la clave de licencia
-   echo "$Key" >"${SCPdir}/key.txt"
-  
+  echo "${SCPdir}/menu.sh" >/usr/bin/menu && chmod +x /usr/bin/menu
+  echo "${SCPdir}/menu.sh" >/usr/bin/MENU && chmod +x /usr/bin/MENU
+  echo "$Key" >${SCPdir}/key.txt
   #-BASH SOPORTE ONLINE
   wget https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Fixs%20Remotos/SPR.sh -O /usr/bin/SPR >/dev/null 2>&1
   chmod +x /usr/bin/SPR
   SPR >/dev/null 2>&1
-  
-   local timeespera="1"
-   local times="10"
-  
-  if [[ "$timeespera" == "1" ]]; then
+  timeespera="1"
+  times="10"
+  if [ "$timeespera" = "1" ]; then
     echo -e "\033[1;97m        ❗️ REGISTRANDO IP y KEY EN LA BASE ❗️            "
     msgi -bar2
-    
-    while ((times > 0)); do
+    while [ $times -gt 0 ]; do
       echo -ne "                         -$times-\033[0K\r"
       sleep 1
-      ((times--))
+      : $((times--))
     done
-    
     tput cuu1 && tput dl1
     tput cuu1 && tput dl1
     tput cuu1 && tput dl1
-    
     msgi -bar2
-    echo -e " \033[1;93m                REGISTRO COMPLETO "
-    echo -e " \033[1;97m      COMANDO PRINCIPAL PARA ENTRAR AL PANEL "
-    echo -e "                  \033[1;41m menu o MENU \033[0;37m                 " && msgi -bar2
+    echo -e " \033[1;93m              LISTO REGISTRO COMPLETO "
+    echo -e " \033[1;97m       COMANDO PRINCIPAL PARA ENTRAR AL PANEL "
+    echo -e "                   \033[1;41m  menu o MENU  \033[0;37m                 " && msgi -bar2
   fi
-  
-  get_public_ip() {
-       if [[ -e /tmp/IP ]]; then
-           cat /tmp/IP
-       else
-           local public_ip
-           public_ip=$(wget -qO- ipinfo.io/ip || wget -qO- ifconfig.me)
-           echo "$public_ip" >/tmp/IP
-           echo "$public_ip"
-       fi
-   }
+  meu_ip() {
+    if [[ -e /tmp/IP ]]; then
+      echo "$(cat /tmp/IP)"
+    else
+      MEU_IP=$(wget -qO- ipinfo.io/ip || wget -qO- ifconfig.me)
+      echo "$MEU_IP" >/tmp/IP
+    fi
+  }
+  meu_ip &>/dev/null
+  exit
 
-   meu_ip=$(get_public_ip &>/dev/null)
-   exit
-   
 }
 
 error_fun() {
