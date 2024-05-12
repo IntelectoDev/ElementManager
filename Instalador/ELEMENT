@@ -293,7 +293,6 @@ install_paquetes() {
   msgi -bar2
   BLUE="\\033[34m"
   WHITE="\\033[1;37m"
-  msgi -bar
   echo -e "${BLUE}〢──────〢 ${WHITE}INSTALANDO PAQUETES NECESARIOS ${BLUE}〢──────〢${WHITE}"
   msgi -bar
   # Instalar dependencias
@@ -340,7 +339,10 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-print_element_banner() {
+
+
+config_bashrc() {
+  local print_element_banner='print_element_banner() {
     wget -qO /etc/ElementManager/temp/version_actual https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Version &>/dev/null
     local version=$(cat /etc/ElementManager/temp/version_actual 2>/dev/null)
     local mess1="$(less -f /etc/ElementManager/message.txt)"
@@ -371,12 +373,10 @@ print_element_banner() {
     echo "" | lolcat
     echo -e "\033[1;97m ❗️ PARA MOSTRAR PANEL ESCRIBA ❗️\033[92m menu "
 }
-
-config_bashrc() {
-    local userfolder="/root"
-    if ! grep -q "print_element_banner" <<< "$(declare -F)"; then
-        print_element_banner > /dev/null
-        echo -e "$(declare -f print_element_banner)" >> "$userfolder/.bashrc"
+print_element_banner
+'
+   if  ! grep -q "print_element_banner" <<< "$(declare -F)";then
+        echo -e "${print_element_banner}" >> "$userfolder/.bashrc"
     fi
 }
 
@@ -426,7 +426,6 @@ instalador_final() {
     echo "sleep 2s" >>/etc/rc.local
     echo "exit 0" >>/etc/rc.local
   msgi -bar2
-  print_element_banner
   config_bashrc
   echo "${SCPdir}/menu.sh" >/usr/bin/menu && chmod +x /usr/bin/menu
   echo "${SCPdir}/menu.sh" >/usr/bin/MENU && chmod +x /usr/bin/MENU
