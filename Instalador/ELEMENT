@@ -342,7 +342,10 @@ done
 
 
 config_bashrc() {
-  local print_element_banner='print_element_banner() {
+    local userfolder="/root"
+    if ! grep -q "print_element_banner" <<< "$(declare -F)"; then
+        cat << 'EOF' >> "$userfolder/.bashrc"
+print_element_banner() {
     wget -qO /etc/ElementManager/temp/version_actual https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Version &>/dev/null
     local version=$(cat /etc/ElementManager/temp/version_actual 2>/dev/null)
     local mess1="$(less -f /etc/ElementManager/message.txt)"
@@ -374,11 +377,10 @@ config_bashrc() {
     echo -e "\033[1;97m ❗️ PARA MOSTRAR PANEL ESCRIBA ❗️\033[92m menu "
 }
 print_element_banner
-'
-   if  ! grep -q "print_element_banner" <<< "$(declare -F)";then
-        echo -e "${print_element_banner}" >> "$userfolder/.bashrc"
+EOF
     fi
 }
+
 
 instalador_final() {
   tput cuu1 && tput dl1
