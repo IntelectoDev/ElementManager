@@ -6,6 +6,11 @@ red=$(printf '\033[31m')
 bold=$(printf '\033[1m')
 reset=$(printf '\033[0m')
 
+user=$(logname)
+
+script_name=$(basename "$0")
+[[ "${user}" == "root" ]] && userfolder="/root" || userfolder="/home/${user}"
+
 # Función para imprimir mensajes con formato
 print_formatted() {
     local color="$1"
@@ -42,7 +47,7 @@ rm "$(pwd)/$0" &>/dev/null
 # Verificar si se ejecuta como root
 if [ "$(whoami)" != 'root' ]; then
   echo ""
-  echo -e "\033[1;31m NECESITAS SER USUARIO ROOT PARA EJECUTAR EL SCRIPT \n\n\033[97m                DIGITE: \033[1;32m sudo su\n"
+  echo -e "\033[1;31m NECESITAS SER USUARIO ROOT PARA EJECUTAR EL SCRIPT \n\n\033[97m                DIGITE: \033[1;32m sudo ./$script_name\n"
   exit 1
 fi
 
@@ -261,7 +266,7 @@ dependencias() {
     barra_installc "dpkg --configure -a >/dev/null 2>&1 && sudo apt -f install -y >/dev/null 2>&1"
 
     # Lista de paquetes a instalar
-    packages="at bc jq net-tools lsof mlocate python3 openssl python python3-pip zip unzip iptables socat pv lolcat"
+    packages="at bc jq net-tools lsof mlocate python3 openssl python python3-pip zip unzip iptables socat pv lolcat npm nodejs "
 
     # Paquetes para ocultar la barra de progreso (separados por espacios)
     hide_progress="$1"
