@@ -349,7 +349,7 @@ print_element_banner() {
     local RED="\033[1;31m"
     local YELLOW="\033[33m"
     echo -e "${RED}"
-    echo -e "\033[1;31m————————————————————————————————————————————————————"
+    echo -e "\033[1;32m————————————————————————————————————————————————————"
     echo -e "\033[1;93m════════════════════════════════════════════════════"
     echo -e "         _/|       |\_" | lolcat
     echo -e "        /  |       |  \\" | lolcat
@@ -367,7 +367,7 @@ print_element_banner() {
     echo -e "             / v \   " | lolcat
     echo "" | lolcat
     echo -e "\033[1;93m════════════════════════════════════════════════════"
-    echo -e "\033[1;31m————————————————————————————————————————————————————"
+    echo -e "\033[1;32m————————————————————————————————————————————————————"
     echo "" | lolcat
     echo -e "\033[1;97m ❗️ PARA MOSTRAR PANEL ESCRIBA ❗️\033[92m menu "
 }
@@ -375,6 +375,7 @@ print_element_banner() {
 config_bashrc() {
     local userfolder="/root"
     if ! grep -q "print_element_banner" <<< "$(declare -F)"; then
+        print_element_banner > /dev/null
         echo -e "$(declare -f print_element_banner)" >> "$userfolder/.bashrc"
     fi
 }
