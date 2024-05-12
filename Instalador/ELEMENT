@@ -402,7 +402,7 @@ instalador_final() {
   Filbot="${SCPdir}/botmanager"
   Filpy="${SCPdir}/filespy"
   Filotros="${SCPdir}/temp"
-  IP=$(cat /root/.ssh/authrized_key.reg)
+  IP=$(cat /root/.ssh/authorized_key.reg)
   ### INSTALAR VERSION DE SCRIPT
   v1=$(curl -sSL "https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Version")
   echo "$v1" >/etc/ElementManager/temp/version_instalacion
