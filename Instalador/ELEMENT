@@ -369,7 +369,7 @@ print_element_banner() {
     echo -e "\033[1;93m════════════════════════════════════════════════════"
     echo -e "\033[1;31m————————————————————————————————————————————————————"
     echo "" | lolcat
-    echo -e "\033[1;97m ❗️ PARA MOSTRAR PANEL ESCRIBA ❗️\033[92m element "
+    echo -e "\033[1;97m ❗️ PARA MOSTRAR PANEL ESCRIBA ❗️\033[92m menu "
 }
 
 config_bashrc() {
