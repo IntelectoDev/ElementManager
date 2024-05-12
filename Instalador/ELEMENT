@@ -379,8 +379,8 @@ instalador_final() {
   tput cuu1 && tput dl1
   echo -e "     \033[1;4;32mLA KEY ES VALIDA FINALIZANDO INSTALACION \033[0;39m"
   ##-->> ACOPLANDO INSTALL EN /BIN
-  wget /root/LATAM https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Instalador/LATAM -O /usr/bin/LATAM &>/dev/null
-  chmod +x /usr/bin/LATAM
+  wget /root/ELEMENT https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Instalador/ELEMENT -O /usr/bin/ELEMENT &>/dev/null
+  chmod +x /usr/bin/ELEMENT
   ##-->> LIMPIAR BASHRC
   /bin/cp /etc/skel/.bashrc ~/
   ##-->> DESCARGAR FICHEROS
@@ -409,8 +409,8 @@ instalador_final() {
   chmod +x /bin/rebootnb
   wget -O /bin/autoinicios https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Ejecutables/autoinicios &>/dev/null
   chmod +rwx /bin/autoinicios
-  wget -O /etc/systemd/system/iniciolatam.service https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Ejecutables/iniciolatam.service &>/dev/null
-  sudo systemctl enable -q iniciolatam.service
+  wget -O /etc/systemd/system/inicioelement.service https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Ejecutables/inicioelement.service &>/dev/null
+  sudo systemctl enable -q inicioelement.service
   wget -O /bin/check-update https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Ejecutables/check-update &>/dev/null
   chmod +rwx /bin/check-update
   wget -O /etc/ElementManager/temp/version_actual https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/Version &>/dev/null
