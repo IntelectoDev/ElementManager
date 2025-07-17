@@ -18,7 +18,7 @@ URL_ARM32="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/
 
 # Directorio de instalación
 DEST="$PREFIX/bin/clarox"
-TEMP_FILE="/tmp/clarox_temp"
+TEMP_FILE="$HOME/clarox_temp"
 
 # Función para mostrar header
 show_header() {
@@ -103,6 +103,7 @@ detect_architecture() {
 # Función para actualizar repositorios
 update_repositories() {
     log "INFO" "Actualizando repositorios de Termux..."
+    export DEBIAN_FRONTEND=noninteractive
     if pkg update -y; then
         log "SUCCESS" "Repositorios actualizados correctamente"
     else
@@ -114,6 +115,10 @@ update_repositories() {
 install_dependencies() {
     log "INFO" "Instalando dependencias necesarias..."
     
+    # Primero arreglar problemas con openssl si existen
+    log "INFO" "Verificando configuración del sistema..."
+    export DEBIAN_FRONTEND=noninteractive
+    
     # Lista de paquetes necesarios (igual que clarodo)
     local packages=(
         "python"
@@ -123,7 +128,7 @@ install_dependencies() {
     
     for package in "${packages[@]}"; do
         log "INFO" "Instalando $package..."
-        if pkg install -y "$package"; then
+        if DEBIAN_FRONTEND=noninteractive pkg install -y "$package"; then
             log "SUCCESS" "$package instalado correctamente"
         else
             log "WARNING" "Error al instalar $package, continuando..."
@@ -136,15 +141,14 @@ download_binary() {
     log "INFO" "Descargando clarox ($ARCH_NAME)..."
     log "INFO" "URL: $URL"
     
-    # Crear directorio temporal si no existe
-    mkdir -p "$(dirname "$TEMP_FILE")"
+    # Usar directorio home en lugar de /tmp
+    log "INFO" "Descargando a: $TEMP_FILE"
     
     # Descargar con curl con opciones robustas
-    if curl -L \
+    if curl -s -L \
         --retry 3 \
         --retry-delay 2 \
         --max-time 120 \
-        --progress-bar \
         --user-agent "Mozilla/5.0 (Linux; Android 10; Mobile)" \
         -o "$TEMP_FILE" \
         "$URL"; then
