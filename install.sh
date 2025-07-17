@@ -13,7 +13,7 @@ WHITE='\033[1;37m'
 RESET='\033[0m'
 
 # URLs del archivo Python
-URL_PYTHON="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/clarox.py"
+URL_PYTHON="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/clarox_enc.py"
 
 # Directorios de instalación
 DEST_DIR="$PREFIX/bin"
