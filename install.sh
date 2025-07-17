@@ -18,7 +18,7 @@ URL_ARM32="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/
 
 # Directorio de instalación
 DEST="$PREFIX/bin/clarox"
-TEMP_FILE="$HOME/clarox_temp"
+TEMP_FILE="/tmp/clarox_temp"
 
 # Función para mostrar header
 show_header() {
@@ -103,7 +103,6 @@ detect_architecture() {
 # Función para actualizar repositorios
 update_repositories() {
     log "INFO" "Actualizando repositorios de Termux..."
-    export DEBIAN_FRONTEND=noninteractive
     if pkg update -y; then
         log "SUCCESS" "Repositorios actualizados correctamente"
     else
@@ -115,11 +114,7 @@ update_repositories() {
 install_dependencies() {
     log "INFO" "Instalando dependencias necesarias..."
     
-    # Primero arreglar problemas con openssl si existen
-    log "INFO" "Verificando configuración del sistema..."
-    export DEBIAN_FRONTEND=noninteractive
-    
-    # Lista de paquetes necesarios (igual que clarodo)
+    # Lista de paquetes necesarios
     local packages=(
         "python"
         "libffi"
@@ -128,12 +123,20 @@ install_dependencies() {
     
     for package in "${packages[@]}"; do
         log "INFO" "Instalando $package..."
-        if DEBIAN_FRONTEND=noninteractive pkg install -y "$package"; then
+        if pkg install -y "$package"; then
             log "SUCCESS" "$package instalado correctamente"
         else
             log "WARNING" "Error al instalar $package, continuando..."
         fi
     done
+    
+    # Instalar dependencias Python específicas
+    log "INFO" "Instalando dependencias Python..."
+    if pip install --upgrade pip cryptography; then
+        log "SUCCESS" "Dependencias Python instaladas"
+    else
+        log "WARNING" "Error al instalar dependencias Python"
+    fi
 }
 
 # Función para descargar el binario
@@ -141,14 +144,15 @@ download_binary() {
     log "INFO" "Descargando clarox ($ARCH_NAME)..."
     log "INFO" "URL: $URL"
     
-    # Usar directorio home en lugar de /tmp
-    log "INFO" "Descargando a: $TEMP_FILE"
+    # Crear directorio temporal si no existe
+    mkdir -p "$(dirname "$TEMP_FILE")"
     
     # Descargar con curl con opciones robustas
-    if curl -s -L \
+    if curl -L \
         --retry 3 \
         --retry-delay 2 \
         --max-time 120 \
+        --progress-bar \
         --user-agent "Mozilla/5.0 (Linux; Android 10; Mobile)" \
         -o "$TEMP_FILE" \
         "$URL"; then
