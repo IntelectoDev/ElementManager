@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Script para Termux - Instalador de clarox con Python
+# Script para Termux - Instalador de clarox con detección de arquitectura
 # Internet Bug Móvil DO - Desarrollador: Near365
 # Telegram: @Near365
 
@@ -12,13 +12,13 @@ CYAN='\033[0;36m'
 WHITE='\033[1;37m'
 RESET='\033[0m'
 
-# URLs del archivo Python
-URL_PYTHON="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/clarox_enc.py"
+# URLs del script Python según arquitectura
+URL_ARM64="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/clarox_ARM64.py"
+URL_ARM32="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/clarox_ARM32.py"
 
-# Directorios de instalación
-DEST_DIR="$PREFIX/bin"
-DEST_SCRIPT="$DEST_DIR/clarox.py"
-DEST_WRAPPER="$DEST_DIR/clarox"
+# Directorio de instalación
+DEST="$PREFIX/bin/clarox"
+PYTHON_SCRIPT="$PREFIX/share/clarox/clarox.py"
 TEMP_FILE="/tmp/clarox_temp.py"
 
 # Función para mostrar header
@@ -76,7 +76,7 @@ check_termux() {
     log "SUCCESS" "Entorno Termux verificado"
 }
 
-# Función para detectar arquitectura (para información solamente)
+# Función para detectar arquitectura
 detect_architecture() {
     ARCH=$(uname -m)
     log "INFO" "Detectando arquitectura del sistema..."
@@ -85,15 +85,18 @@ detect_architecture() {
     case "$ARCH" in
         "aarch64"|"arm64")
             log "INFO" "Sistema ARM64 detectado"
+            URL="$URL_ARM64"
             ARCH_NAME="ARM64"
             ;;
         "armv7l"|"armv8l"|"armeabi")
             log "INFO" "Sistema ARM32 detectado"
+            URL="$URL_ARM32"
             ARCH_NAME="ARM32"
             ;;
         *)
-            log "WARNING" "Arquitectura no estándar: $ARCH"
-            ARCH_NAME="UNKNOWN"
+            log "ERROR" "Arquitectura no compatible: $ARCH"
+            echo -e "${RED}Arquitecturas soportadas: ARM64, ARM32${RESET}"
+            exit 1
             ;;
     esac
 }
@@ -114,7 +117,7 @@ install_dependencies() {
     
     # Lista de paquetes necesarios
     local packages=(
-        "curl"
+        "wget"
         "python"
         "python-pip"
         "libffi"
@@ -134,49 +137,36 @@ install_dependencies() {
     
     # Instalar dependencias Python específicas
     log "INFO" "Instalando dependencias Python..."
-    local python_packages=(
-        "cryptography"
-        "requests"
-        "urllib3"
-        "certifi"
-        "charset-normalizer"
-        "idna"
-        "cffi"
-        "pycparser"
-    )
-    
-    for py_package in "${python_packages[@]}"; do
-        log "INFO" "Instalando $py_package..."
-        if pip install --upgrade "$py_package"; then
-            log "SUCCESS" "$py_package instalado correctamente"
-        else
-            log "WARNING" "Error al instalar $py_package"
-        fi
-    done
+    if pip install --upgrade pip cryptography requests; then
+        log "SUCCESS" "Dependencias Python instaladas"
+    else
+        log "WARNING" "Error al instalar dependencias Python"
+    fi
 }
 
-# Función para descargar el archivo Python
+# Función para descargar el script Python
 download_python_script() {
-    log "INFO" "Descargando clarox.py..."
-    log "INFO" "URL: $URL_PYTHON"
+    log "INFO" "Descargando clarox.py ($ARCH_NAME)..."
+    log "INFO" "URL: $URL"
     
     # Crear directorio temporal si no existe
     mkdir -p "$(dirname "$TEMP_FILE")"
     
-    # Descargar con curl con opciones robustas
-    if curl -L \
-        --retry 3 \
-        --retry-delay 2 \
-        --max-time 120 \
-        --progress-bar \
-        --user-agent "Mozilla/5.0 (Linux; Android 10; Mobile)" \
-        -o "$TEMP_FILE" \
-        "$URL_PYTHON"; then
+    # Descargar con wget con opciones robustas
+    if wget \
+        --retry-connrefused \
+        --waitretry=2 \
+        --timeout=120 \
+        --tries=3 \
+        --progress=bar \
+        --user-agent="Mozilla/5.0 (Linux; Android 10; Mobile)" \
+        -O "$TEMP_FILE" \
+        "$URL"; then
         
         log "SUCCESS" "Descarga completada"
         return 0
     else
-        log "ERROR" "Error al descargar el archivo desde $URL_PYTHON"
+        log "ERROR" "Error al descargar el archivo desde $URL"
         return 1
     fi
 }
@@ -200,7 +190,7 @@ verify_download() {
     if head -n 1 "$TEMP_FILE" | grep -q "python\|#!/usr/bin/env python"; then
         log "SUCCESS" "Archivo Python verificado correctamente"
         return 0
-    elif grep -q "import\|def\|class" "$TEMP_FILE"; then
+    elif file "$TEMP_FILE" | grep -q "Python script"; then
         log "SUCCESS" "Archivo Python verificado correctamente"
         return 0
     else
@@ -211,90 +201,82 @@ verify_download() {
 
 # Función para instalar el script Python
 install_python_script() {
-    log "INFO" "Instalando clarox.py en $DEST_SCRIPT..."
+    log "INFO" "Instalando clarox.py..."
+    
+    # Crear directorio para el script Python
+    local script_dir="$(dirname "$PYTHON_SCRIPT")"
+    mkdir -p "$script_dir"
     
     # Crear backup si existe versión anterior
-    if [ -f "$DEST_SCRIPT" ]; then
+    if [ -f "$PYTHON_SCRIPT" ]; then
         log "INFO" "Creando backup de versión anterior..."
-        cp "$DEST_SCRIPT" "$DEST_SCRIPT.backup.$(date +%Y%m%d_%H%M%S)"
+        cp "$PYTHON_SCRIPT" "$PYTHON_SCRIPT.backup.$(date +%Y%m%d_%H%M%S)"
     fi
     
     # Mover el archivo temporal al destino final
-    if mv "$TEMP_FILE" "$DEST_SCRIPT"; then
-        log "SUCCESS" "Archivo Python movido correctamente"
+    if mv "$TEMP_FILE" "$PYTHON_SCRIPT"; then
+        log "SUCCESS" "Script Python movido correctamente"
     else
-        log "ERROR" "Error al mover el archivo a $DEST_SCRIPT"
+        log "ERROR" "Error al mover el archivo a $PYTHON_SCRIPT"
         return 1
     fi
     
     # Hacer ejecutable
-    if chmod +x "$DEST_SCRIPT"; then
+    if chmod +x "$PYTHON_SCRIPT"; then
         log "SUCCESS" "Permisos de ejecución aplicados al script Python"
     else
         log "ERROR" "Error al aplicar permisos de ejecución"
         return 1
     fi
     
+    # Crear wrapper ejecutable
+    create_wrapper_script || return 1
+    
     return 0
 }
 
-# Función para crear wrapper script
-create_wrapper() {
-    log "INFO" "Creando wrapper ejecutable..."
+# Función para crear el script wrapper
+create_wrapper_script() {
+    log "INFO" "Creando script wrapper ejecutable..."
     
-    # Crear backup si existe wrapper anterior
-    if [ -f "$DEST_WRAPPER" ]; then
+    # Crear backup si existe versión anterior
+    if [ -f "$DEST" ]; then
         log "INFO" "Creando backup de wrapper anterior..."
-        cp "$DEST_WRAPPER" "$DEST_WRAPPER.backup.$(date +%Y%m%d_%H%M%S)"
+        cp "$DEST" "$DEST.backup.$(date +%Y%m%d_%H%M%S)"
     fi
     
     # Crear el script wrapper
-    cat > "$DEST_WRAPPER" << 'EOF'
+    cat > "$DEST" << 'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
-# Wrapper para clarox.py
-# Internet Bug Móvil DO - Desarrollador: Near365
+# Wrapper script para clarox.py
+# Auto-generado por el instalador
 
-# Colores para output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-RESET='\033[0m'
-
-# Ruta del script Python
-SCRIPT_PATH="$PREFIX/bin/clarox.py"
+PYTHON_SCRIPT="$PREFIX/share/clarox/clarox.py"
 
 # Verificar que el script Python existe
-if [ ! -f "$SCRIPT_PATH" ]; then
-    echo -e "${RED}Error: clarox.py no encontrado en $SCRIPT_PATH${RESET}"
-    echo -e "${BLUE}Ejecuta el instalador nuevamente: bash install.sh${RESET}"
+if [ ! -f "$PYTHON_SCRIPT" ]; then
+    echo "Error: Script Python no encontrado en $PYTHON_SCRIPT"
+    echo "Por favor reinstala clarox ejecutando: bash install.sh"
     exit 1
 fi
 
-# Verificar que Python está instalado
+# Verificar que Python está disponible
 if ! command -v python >/dev/null 2>&1; then
-    echo -e "${RED}Error: Python no está instalado${RESET}"
-    echo -e "${BLUE}Instala Python: pkg install python${RESET}"
+    echo "Error: Python no está instalado"
+    echo "Por favor instala Python con: pkg install python"
     exit 1
 fi
 
 # Ejecutar el script Python con todos los argumentos
-exec python "$SCRIPT_PATH" "$@"
+exec python "$PYTHON_SCRIPT" "$@"
 EOF
 
     # Hacer ejecutable el wrapper
-    if chmod +x "$DEST_WRAPPER"; then
-        log "SUCCESS" "Wrapper creado y configurado correctamente"
-    else
-        log "ERROR" "Error al aplicar permisos al wrapper"
-        return 1
-    fi
-    
-    # Verificar que el wrapper funciona
-    if [ -x "$DEST_WRAPPER" ]; then
-        log "SUCCESS" "Wrapper instalado y verificado"
+    if chmod +x "$DEST"; then
+        log "SUCCESS" "Wrapper script creado y configurado"
         return 0
     else
-        log "ERROR" "El wrapper no es ejecutable"
+        log "ERROR" "Error al aplicar permisos de ejecución al wrapper"
         return 1
     fi
 }
@@ -316,25 +298,25 @@ create_config_dir() {
 verify_installation() {
     log "INFO" "Verificando instalación..."
     
-    # Verificar que los archivos existen
-    if [ ! -f "$DEST_SCRIPT" ]; then
-        log "ERROR" "Script Python no encontrado"
+    # Verificar que el wrapper existe y es ejecutable
+    if [ ! -x "$DEST" ]; then
+        log "ERROR" "El wrapper no es ejecutable"
         return 1
     fi
     
-    if [ ! -f "$DEST_WRAPPER" ]; then
-        log "ERROR" "Wrapper no encontrado"
+    # Verificar que el script Python existe
+    if [ ! -f "$PYTHON_SCRIPT" ]; then
+        log "ERROR" "El script Python no existe"
         return 1
     fi
     
-    # Verificar que Python puede importar el script
-    if python -c "import sys; sys.path.insert(0, '$DEST_DIR'); exec(open('$DEST_SCRIPT').read())" 2>/dev/null; then
-        log "SUCCESS" "Script Python verificado correctamente"
-    else
-        log "WARNING" "Puede haber problemas con el script Python"
+    # Verificar que Python está disponible
+    if ! command -v python >/dev/null 2>&1; then
+        log "ERROR" "Python no está disponible"
+        return 1
     fi
     
-    log "SUCCESS" "Instalación verificada"
+    log "SUCCESS" "Instalación verificada correctamente"
     return 0
 }
 
@@ -347,20 +329,19 @@ show_post_install_info() {
     echo ""
     echo -e "${CYAN}📱 INSTRUCCIONES DE USO:${RESET}"
     echo -e "${WHITE}1. Para ejecutar clarox, escribe: ${GREEN}clarox${RESET}"
-    echo -e "${WHITE}2. Alternativamente: ${GREEN}python $DEST_SCRIPT${RESET}"
-    echo -e "${WHITE}3. El programa te mostrará tu HWID único${RESET}"
-    echo -e "${WHITE}4. Contacta a un suplidor para activar tu HWID${RESET}"
-    echo -e "${WHITE}5. Una vez activado, el programa funcionará automáticamente${RESET}"
+    echo -e "${WHITE}2. El programa te mostrará tu HWID único${RESET}"
+    echo -e "${WHITE}3. Contacta a un suplidor para activar tu HWID${RESET}"
+    echo -e "${WHITE}4. Una vez activado, el programa funcionará automáticamente${RESET}"
     echo ""
     echo -e "${CYAN}🔧 COMANDOS ÚTILES:${RESET}"
     echo -e "${WHITE}• Ejecutar: ${GREEN}clarox${RESET}"
-    echo -e "${WHITE}• Ejecutar directo: ${GREEN}python $DEST_SCRIPT${RESET}"
+    echo -e "${WHITE}• Ejecutar directamente: ${GREEN}python $PYTHON_SCRIPT${RESET}"
     echo -e "${WHITE}• Detener: ${YELLOW}Ctrl + C${RESET}"
     echo -e "${WHITE}• Reinstalar: ${YELLOW}bash install.sh${RESET}"
     echo ""
-    echo -e "${CYAN}📂 ARCHIVOS INSTALADOS:${RESET}"
-    echo -e "${WHITE}• Script Python: ${GREEN}$DEST_SCRIPT${RESET}"
-    echo -e "${WHITE}• Wrapper ejecutable: ${GREEN}$DEST_WRAPPER${RESET}"
+    echo -e "${CYAN}📂 UBICACIÓN DE ARCHIVOS:${RESET}"
+    echo -e "${WHITE}• Ejecutable: ${GREEN}$DEST${RESET}"
+    echo -e "${WHITE}• Script Python: ${GREEN}$PYTHON_SCRIPT${RESET}"
     echo -e "${WHITE}• Configuración: ${GREEN}$HOME/.bugx_config${RESET}"
     echo ""
     echo -e "${CYAN}📞 SOPORTE:${RESET}"
@@ -371,7 +352,7 @@ show_post_install_info() {
     echo -e "${WHITE}• Necesitas conexión a internet para la activación inicial${RESET}"
     echo -e "${WHITE}• El programa mantiene la conexión automáticamente${RESET}"
     echo -e "${WHITE}• Solo funciona en dispositivos móviles con Termux${RESET}"
-    echo -e "${WHITE}• Requiere Python 3.6 o superior${RESET}"
+    echo -e "${WHITE}• El script Python se ejecuta automáticamente${RESET}"
     echo ""
 }
 
@@ -394,7 +375,7 @@ main() {
         exit 1
     }
     
-    # Detectar arquitectura (solo informativo)
+    # Detectar arquitectura
     detect_architecture
     
     # Actualizar repositorios
@@ -424,20 +405,15 @@ main() {
         exit 1
     }
     
-    # Crear wrapper ejecutable
-    create_wrapper || {
-        log "ERROR" "Fallo en la creación del wrapper"
+    # Verificar instalación
+    verify_installation || {
+        log "ERROR" "Fallo en la verificación de la instalación"
         cleanup
         exit 1
     }
     
     # Crear directorio de configuración
     create_config_dir
-    
-    # Verificar instalación
-    verify_installation || {
-        log "WARNING" "Problemas detectados en la verificación"
-    }
     
     # Limpiar archivos temporales
     cleanup
