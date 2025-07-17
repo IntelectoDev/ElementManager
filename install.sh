@@ -19,7 +19,7 @@ URL_ARM32="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/
 # Directorio de instalación
 DEST="$PREFIX/bin/clarox"
 PYTHON_SCRIPT="$PREFIX/share/clarox/clarox.py"
-TEMP_FILE="/tmp/clarox_temp.py"
+TEMP_FILE="$HOME/clarox_temp.py"
 
 # Función para mostrar header
 show_header() {
@@ -135,12 +135,12 @@ install_dependencies() {
         fi
     done
     
-    # Instalar dependencias Python específicas
-    log "INFO" "Instalando dependencias Python..."
-    if pip install --upgrade pip cryptography requests; then
+    # Instalar dependencias Python específicas (solo las esenciales)
+    log "INFO" "Instalando dependencias Python esenciales..."
+    if pip install --upgrade requests urllib3; then
         log "SUCCESS" "Dependencias Python instaladas"
     else
-        log "WARNING" "Error al instalar dependencias Python"
+        log "WARNING" "Error al instalar dependencias Python, continuando..."
     fi
 }
 
@@ -149,11 +149,15 @@ download_python_script() {
     log "INFO" "Descargando clarox.py ($ARCH_NAME)..."
     log "INFO" "URL: $URL"
     
-    # Crear directorio temporal si no existe
-    mkdir -p "$(dirname "$TEMP_FILE")"
+    # Usar directorio home en lugar de /tmp
+    log "INFO" "Usando directorio temporal: $HOME"
+    
+    # Limpiar archivo temporal si existe
+    [ -f "$TEMP_FILE" ] && rm -f "$TEMP_FILE"
     
     # Descargar con wget con opciones robustas
     if wget \
+        --no-check-certificate \
         --retry-connrefused \
         --waitretry=2 \
         --timeout=120 \
@@ -166,8 +170,23 @@ download_python_script() {
         log "SUCCESS" "Descarga completada"
         return 0
     else
-        log "ERROR" "Error al descargar el archivo desde $URL"
-        return 1
+        log "WARNING" "Error con wget, intentando con curl..."
+        # Fallback a curl si wget falla
+        if curl -k -L \
+            --retry 3 \
+            --retry-delay 2 \
+            --max-time 120 \
+            --progress-bar \
+            --user-agent "Mozilla/5.0 (Linux; Android 10; Mobile)" \
+            -o "$TEMP_FILE" \
+            "$URL"; then
+            
+            log "SUCCESS" "Descarga completada con curl"
+            return 0
+        else
+            log "ERROR" "Error al descargar el archivo desde $URL"
+            return 1
+        fi
     fi
 }
 
@@ -176,7 +195,7 @@ verify_download() {
     log "INFO" "Verificando archivo descargado..."
     
     if [ ! -f "$TEMP_FILE" ]; then
-        log "ERROR" "Archivo temporal no encontrado"
+        log "ERROR" "Archivo temporal no encontrado en $TEMP_FILE"
         return 1
     fi
     
@@ -186,15 +205,30 @@ verify_download() {
         return 1
     fi
     
-    # Verificar que es un archivo Python válido
+    # Verificar tamaño mínimo del archivo
+    local file_size=$(stat -c%s "$TEMP_FILE" 2>/dev/null || wc -c < "$TEMP_FILE")
+    if [ "$file_size" -lt 100 ]; then
+        log "ERROR" "El archivo descargado es demasiado pequeño ($file_size bytes)"
+        log "INFO" "Contenido del archivo:"
+        head -n 5 "$TEMP_FILE"
+        return 1
+    fi
+    
+    # Verificar que es un archivo Python válido o contiene código Python
     if head -n 1 "$TEMP_FILE" | grep -q "python\|#!/usr/bin/env python"; then
-        log "SUCCESS" "Archivo Python verificado correctamente"
+        log "SUCCESS" "Archivo Python verificado correctamente (shebang detectado)"
         return 0
-    elif file "$TEMP_FILE" | grep -q "Python script"; then
-        log "SUCCESS" "Archivo Python verificado correctamente"
+    elif grep -q "import\|def\|class\|print(" "$TEMP_FILE"; then
+        log "SUCCESS" "Archivo Python verificado correctamente (código Python detectado)"
+        return 0
+    elif file "$TEMP_FILE" 2>/dev/null | grep -q "Python script"; then
+        log "SUCCESS" "Archivo Python verificado correctamente (file command)"
         return 0
     else
-        log "WARNING" "El archivo puede no ser un script Python válido, continuando..."
+        log "WARNING" "No se pudo verificar que sea un archivo Python válido"
+        log "INFO" "Primeras líneas del archivo:"
+        head -n 3 "$TEMP_FILE"
+        log "INFO" "Continuando con la instalación..."
         return 0
     fi
 }
