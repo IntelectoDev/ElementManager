@@ -114,15 +114,11 @@ update_repositories() {
 install_dependencies() {
     log "INFO" "Instalando dependencias necesarias..."
     
-    # Lista de paquetes necesarios
+    # Lista de paquetes necesarios (igual que clarodo)
     local packages=(
-        "curl"
         "python"
-        "python-pip"
         "libffi"
-        "openssl"
-        "libcrypt"
-        "proot"
+        "python-cryptography"
     )
     
     for package in "${packages[@]}"; do
@@ -133,14 +129,6 @@ install_dependencies() {
             log "WARNING" "Error al instalar $package, continuando..."
         fi
     done
-    
-    # Instalar dependencias Python específicas
-    log "INFO" "Instalando dependencias Python..."
-    if pip install --upgrade pip cryptography; then
-        log "SUCCESS" "Dependencias Python instaladas"
-    else
-        log "WARNING" "Error al instalar dependencias Python"
-    fi
 }
 
 # Función para descargar el binario
