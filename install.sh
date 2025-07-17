@@ -12,14 +12,13 @@ CYAN='\033[0;36m'
 WHITE='\033[1;37m'
 RESET='\033[0m'
 
-# URLs del script Python según arquitectura
-URL_ARM64="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/clarox_ARM64.py"
-URL_ARM32="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/clarox_ARM32.py"
+# URLs del binario según arquitectura
+URL_ARM64="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/clarox_ARM64"
+URL_ARM32="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/clarox_ARM32"
 
 # Directorio de instalación
 DEST="$PREFIX/bin/clarox"
-PYTHON_SCRIPT="$PREFIX/share/clarox/clarox.py"
-TEMP_FILE="$HOME/clarox_temp.py"
+TEMP_FILE="/tmp/clarox_temp"
 
 # Función para mostrar header
 show_header() {
@@ -117,7 +116,7 @@ install_dependencies() {
     
     # Lista de paquetes necesarios
     local packages=(
-        "wget"
+        "curl"
         "python"
         "python-pip"
         "libffi"
@@ -135,58 +134,38 @@ install_dependencies() {
         fi
     done
     
-    # Instalar dependencias Python específicas (solo las esenciales)
-    log "INFO" "Instalando dependencias Python esenciales..."
-    if pip install --upgrade requests urllib3; then
+    # Instalar dependencias Python específicas
+    log "INFO" "Instalando dependencias Python..."
+    if pip install --upgrade pip cryptography; then
         log "SUCCESS" "Dependencias Python instaladas"
     else
-        log "WARNING" "Error al instalar dependencias Python, continuando..."
+        log "WARNING" "Error al instalar dependencias Python"
     fi
 }
 
-# Función para descargar el script Python
-download_python_script() {
-    log "INFO" "Descargando clarox.py ($ARCH_NAME)..."
+# Función para descargar el binario
+download_binary() {
+    log "INFO" "Descargando clarox ($ARCH_NAME)..."
     log "INFO" "URL: $URL"
     
-    # Usar directorio home en lugar de /tmp
-    log "INFO" "Usando directorio temporal: $HOME"
+    # Crear directorio temporal si no existe
+    mkdir -p "$(dirname "$TEMP_FILE")"
     
-    # Limpiar archivo temporal si existe
-    [ -f "$TEMP_FILE" ] && rm -f "$TEMP_FILE"
-    
-    # Descargar con wget con opciones robustas
-    if wget \
-        --no-check-certificate \
-        --retry-connrefused \
-        --waitretry=2 \
-        --timeout=120 \
-        --tries=3 \
-        --progress=bar \
-        --user-agent="Mozilla/5.0 (Linux; Android 10; Mobile)" \
-        -O "$TEMP_FILE" \
+    # Descargar con curl con opciones robustas
+    if curl -L \
+        --retry 3 \
+        --retry-delay 2 \
+        --max-time 120 \
+        --progress-bar \
+        --user-agent "Mozilla/5.0 (Linux; Android 10; Mobile)" \
+        -o "$TEMP_FILE" \
         "$URL"; then
         
         log "SUCCESS" "Descarga completada"
         return 0
     else
-        log "WARNING" "Error con wget, intentando con curl..."
-        # Fallback a curl si wget falla
-        if curl -k -L \
-            --retry 3 \
-            --retry-delay 2 \
-            --max-time 120 \
-            --progress-bar \
-            --user-agent "Mozilla/5.0 (Linux; Android 10; Mobile)" \
-            -o "$TEMP_FILE" \
-            "$URL"; then
-            
-            log "SUCCESS" "Descarga completada con curl"
-            return 0
-        else
-            log "ERROR" "Error al descargar el archivo desde $URL"
-            return 1
-        fi
+        log "ERROR" "Error al descargar el archivo desde $URL"
+        return 1
     fi
 }
 
@@ -195,7 +174,7 @@ verify_download() {
     log "INFO" "Verificando archivo descargado..."
     
     if [ ! -f "$TEMP_FILE" ]; then
-        log "ERROR" "Archivo temporal no encontrado en $TEMP_FILE"
+        log "ERROR" "Archivo temporal no encontrado"
         return 1
     fi
     
@@ -205,112 +184,48 @@ verify_download() {
         return 1
     fi
     
-    # Verificar tamaño mínimo del archivo
-    local file_size=$(stat -c%s "$TEMP_FILE" 2>/dev/null || wc -c < "$TEMP_FILE")
-    if [ "$file_size" -lt 100 ]; then
-        log "ERROR" "El archivo descargado es demasiado pequeño ($file_size bytes)"
-        log "INFO" "Contenido del archivo:"
-        head -n 5 "$TEMP_FILE"
-        return 1
-    fi
-    
-    # Verificar que es un archivo Python válido o contiene código Python
-    if head -n 1 "$TEMP_FILE" | grep -q "python\|#!/usr/bin/env python"; then
-        log "SUCCESS" "Archivo Python verificado correctamente (shebang detectado)"
-        return 0
-    elif grep -q "import\|def\|class\|print(" "$TEMP_FILE"; then
-        log "SUCCESS" "Archivo Python verificado correctamente (código Python detectado)"
-        return 0
-    elif file "$TEMP_FILE" 2>/dev/null | grep -q "Python script"; then
-        log "SUCCESS" "Archivo Python verificado correctamente (file command)"
+    # Verificar que es un archivo ejecutable válido
+    if file "$TEMP_FILE" | grep -q "executable"; then
+        log "SUCCESS" "Archivo verificado correctamente"
         return 0
     else
-        log "WARNING" "No se pudo verificar que sea un archivo Python válido"
-        log "INFO" "Primeras líneas del archivo:"
-        head -n 3 "$TEMP_FILE"
-        log "INFO" "Continuando con la instalación..."
+        log "WARNING" "El archivo puede no ser un ejecutable válido, continuando..."
         return 0
     fi
 }
 
-# Función para instalar el script Python
-install_python_script() {
-    log "INFO" "Instalando clarox.py..."
-    
-    # Crear directorio para el script Python
-    local script_dir="$(dirname "$PYTHON_SCRIPT")"
-    mkdir -p "$script_dir"
+# Función para instalar el binario
+install_binary() {
+    log "INFO" "Instalando clarox en $DEST..."
     
     # Crear backup si existe versión anterior
-    if [ -f "$PYTHON_SCRIPT" ]; then
+    if [ -f "$DEST" ]; then
         log "INFO" "Creando backup de versión anterior..."
-        cp "$PYTHON_SCRIPT" "$PYTHON_SCRIPT.backup.$(date +%Y%m%d_%H%M%S)"
+        cp "$DEST" "$DEST.backup.$(date +%Y%m%d_%H%M%S)"
     fi
     
     # Mover el archivo temporal al destino final
-    if mv "$TEMP_FILE" "$PYTHON_SCRIPT"; then
-        log "SUCCESS" "Script Python movido correctamente"
+    if mv "$TEMP_FILE" "$DEST"; then
+        log "SUCCESS" "Archivo movido correctamente"
     else
-        log "ERROR" "Error al mover el archivo a $PYTHON_SCRIPT"
+        log "ERROR" "Error al mover el archivo a $DEST"
         return 1
     fi
     
     # Hacer ejecutable
-    if chmod +x "$PYTHON_SCRIPT"; then
-        log "SUCCESS" "Permisos de ejecución aplicados al script Python"
+    if chmod +x "$DEST"; then
+        log "SUCCESS" "Permisos de ejecución aplicados"
     else
         log "ERROR" "Error al aplicar permisos de ejecución"
         return 1
     fi
     
-    # Crear wrapper ejecutable
-    create_wrapper_script || return 1
-    
-    return 0
-}
-
-# Función para crear el script wrapper
-create_wrapper_script() {
-    log "INFO" "Creando script wrapper ejecutable..."
-    
-    # Crear backup si existe versión anterior
-    if [ -f "$DEST" ]; then
-        log "INFO" "Creando backup de wrapper anterior..."
-        cp "$DEST" "$DEST.backup.$(date +%Y%m%d_%H%M%S)"
-    fi
-    
-    # Crear el script wrapper
-    cat > "$DEST" << 'EOF'
-#!/data/data/com.termux/files/usr/bin/bash
-# Wrapper script para clarox.py
-# Auto-generado por el instalador
-
-PYTHON_SCRIPT="$PREFIX/share/clarox/clarox.py"
-
-# Verificar que el script Python existe
-if [ ! -f "$PYTHON_SCRIPT" ]; then
-    echo "Error: Script Python no encontrado en $PYTHON_SCRIPT"
-    echo "Por favor reinstala clarox ejecutando: bash install.sh"
-    exit 1
-fi
-
-# Verificar que Python está disponible
-if ! command -v python >/dev/null 2>&1; then
-    echo "Error: Python no está instalado"
-    echo "Por favor instala Python con: pkg install python"
-    exit 1
-fi
-
-# Ejecutar el script Python con todos los argumentos
-exec python "$PYTHON_SCRIPT" "$@"
-EOF
-
-    # Hacer ejecutable el wrapper
-    if chmod +x "$DEST"; then
-        log "SUCCESS" "Wrapper script creado y configurado"
+    # Verificar que el binario funciona
+    if [ -x "$DEST" ]; then
+        log "SUCCESS" "Binario instalado y verificado"
         return 0
     else
-        log "ERROR" "Error al aplicar permisos de ejecución al wrapper"
+        log "ERROR" "El binario no es ejecutable"
         return 1
     fi
 }
@@ -328,32 +243,6 @@ create_config_dir() {
     fi
 }
 
-# Función para verificar instalación
-verify_installation() {
-    log "INFO" "Verificando instalación..."
-    
-    # Verificar que el wrapper existe y es ejecutable
-    if [ ! -x "$DEST" ]; then
-        log "ERROR" "El wrapper no es ejecutable"
-        return 1
-    fi
-    
-    # Verificar que el script Python existe
-    if [ ! -f "$PYTHON_SCRIPT" ]; then
-        log "ERROR" "El script Python no existe"
-        return 1
-    fi
-    
-    # Verificar que Python está disponible
-    if ! command -v python >/dev/null 2>&1; then
-        log "ERROR" "Python no está disponible"
-        return 1
-    fi
-    
-    log "SUCCESS" "Instalación verificada correctamente"
-    return 0
-}
-
 # Función para mostrar información post-instalación
 show_post_install_info() {
     echo ""
@@ -369,14 +258,8 @@ show_post_install_info() {
     echo ""
     echo -e "${CYAN}🔧 COMANDOS ÚTILES:${RESET}"
     echo -e "${WHITE}• Ejecutar: ${GREEN}clarox${RESET}"
-    echo -e "${WHITE}• Ejecutar directamente: ${GREEN}python $PYTHON_SCRIPT${RESET}"
     echo -e "${WHITE}• Detener: ${YELLOW}Ctrl + C${RESET}"
     echo -e "${WHITE}• Reinstalar: ${YELLOW}bash install.sh${RESET}"
-    echo ""
-    echo -e "${CYAN}📂 UBICACIÓN DE ARCHIVOS:${RESET}"
-    echo -e "${WHITE}• Ejecutable: ${GREEN}$DEST${RESET}"
-    echo -e "${WHITE}• Script Python: ${GREEN}$PYTHON_SCRIPT${RESET}"
-    echo -e "${WHITE}• Configuración: ${GREEN}$HOME/.bugx_config${RESET}"
     echo ""
     echo -e "${CYAN}📞 SOPORTE:${RESET}"
     echo -e "${WHITE}• Telegram: ${GREEN}@Near365${RESET}"
@@ -386,7 +269,6 @@ show_post_install_info() {
     echo -e "${WHITE}• Necesitas conexión a internet para la activación inicial${RESET}"
     echo -e "${WHITE}• El programa mantiene la conexión automáticamente${RESET}"
     echo -e "${WHITE}• Solo funciona en dispositivos móviles con Termux${RESET}"
-    echo -e "${WHITE}• El script Python se ejecuta automáticamente${RESET}"
     echo ""
 }
 
@@ -418,9 +300,9 @@ main() {
     # Instalar dependencias
     install_dependencies
     
-    # Descargar script Python
-    download_python_script || {
-        log "ERROR" "Fallo en la descarga del script Python"
+    # Descargar binario
+    download_binary || {
+        log "ERROR" "Fallo en la descarga del binario"
         cleanup
         exit 1
     }
@@ -432,16 +314,9 @@ main() {
         exit 1
     }
     
-    # Instalar script Python
-    install_python_script || {
-        log "ERROR" "Fallo en la instalación del script Python"
-        cleanup
-        exit 1
-    }
-    
-    # Verificar instalación
-    verify_installation || {
-        log "ERROR" "Fallo en la verificación de la instalación"
+    # Instalar binario
+    install_binary || {
+        log "ERROR" "Fallo en la instalación del binario"
         cleanup
         exit 1
     }
