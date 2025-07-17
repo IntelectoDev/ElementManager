@@ -18,7 +18,8 @@ URL_ARM32="https://raw.githubusercontent.com/IntelectoDev/ElementManager/master/
 
 # Directorio de instalación
 DEST="$PREFIX/bin/clarox"
-TEMP_FILE="/tmp/clarox_temp"
+# Cambiar el directorio temporal a uno accesible en Termux
+TEMP_FILE="$PREFIX/tmp/clarox_temp"
 
 # Función para mostrar header
 show_header() {
@@ -139,13 +140,28 @@ install_dependencies() {
     fi
 }
 
+# Función para crear directorio temporal
+create_temp_dir() {
+    log "INFO" "Creando directorio temporal..."
+    
+    # Crear directorio temporal en $PREFIX/tmp (accesible en Termux)
+    local temp_dir="$PREFIX/tmp"
+    if mkdir -p "$temp_dir"; then
+        log "SUCCESS" "Directorio temporal creado: $temp_dir"
+        return 0
+    else
+        log "ERROR" "Error al crear directorio temporal"
+        return 1
+    fi
+}
+
 # Función para descargar el binario
 download_binary() {
     log "INFO" "Descargando clarox ($ARCH_NAME)..."
     log "INFO" "URL: $URL"
     
     # Crear directorio temporal si no existe
-    mkdir -p "$(dirname "$TEMP_FILE")"
+    create_temp_dir || return 1
     
     # Descargar con curl con opciones robustas
     if curl -L \
@@ -179,6 +195,10 @@ verify_download() {
         log "ERROR" "El archivo descargado está vacío"
         return 1
     fi
+    
+    # Mostrar información del archivo
+    local file_size=$(stat -c%s "$TEMP_FILE" 2>/dev/null || wc -c < "$TEMP_FILE")
+    log "INFO" "Tamaño del archivo: $file_size bytes"
     
     # Verificar que es un archivo ejecutable válido
     if file "$TEMP_FILE" | grep -q "executable"; then
