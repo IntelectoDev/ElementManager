@@ -104,7 +104,7 @@ detect_architecture() {
 # Función para actualizar repositorios
 update_repositories() {
     log "INFO" "Actualizando repositorios de Termux..."
-    if pkg update -y; then
+    if pkg update -y >/dev/null 2>&1; then
         log "SUCCESS" "Repositorios actualizados correctamente"
     else
         log "WARNING" "Error al actualizar repositorios, continuando..."
@@ -120,11 +120,12 @@ install_dependencies() {
         "python"
         "libffi"
         "python-cryptography"
+        "file"
     )
     
     for package in "${packages[@]}"; do
         log "INFO" "Instalando $package..."
-        if pkg install -y "$package"; then
+        if pkg install -y "$package" >/dev/null 2>&1; then
             log "SUCCESS" "$package instalado correctamente"
         else
             log "WARNING" "Error al instalar $package, continuando..."
@@ -133,7 +134,7 @@ install_dependencies() {
     
     # Instalar dependencias Python específicas
     log "INFO" "Instalando dependencias Python..."
-    if pip install --upgrade pip cryptography; then
+    if pip install --upgrade pip cryptography >/dev/null 2>&1; then
         log "SUCCESS" "Dependencias Python instaladas"
     else
         log "WARNING" "Error al instalar dependencias Python"
@@ -163,15 +164,17 @@ download_binary() {
     # Crear directorio temporal si no existe
     create_temp_dir || return 1
     
-    # Descargar con curl con opciones robustas
+    # Descargar con curl con barra de progreso limpia
     if curl -L \
         --retry 3 \
         --retry-delay 2 \
         --max-time 120 \
-        --progress-bar \
+        --silent \
+        --show-error \
         --user-agent "Mozilla/5.0 (Linux; Android 10; Mobile)" \
         -o "$TEMP_FILE" \
-        "$URL"; then
+        "$URL" \
+        --write-out "\n"; then
         
         log "SUCCESS" "Descarga completada"
         return 0
@@ -200,14 +203,25 @@ verify_download() {
     local file_size=$(stat -c%s "$TEMP_FILE" 2>/dev/null || wc -c < "$TEMP_FILE")
     log "INFO" "Tamaño del archivo: $file_size bytes"
     
-    # Verificar que es un archivo ejecutable válido
-    if file "$TEMP_FILE" | grep -q "executable"; then
-        log "SUCCESS" "Archivo verificado correctamente"
-        return 0
+    # Verificar tipo de archivo si el comando 'file' está disponible
+    if command -v file >/dev/null 2>&1; then
+        local file_type=$(file "$TEMP_FILE" 2>/dev/null)
+        if echo "$file_type" | grep -q "executable\|ELF"; then
+            log "SUCCESS" "Archivo verificado como ejecutable válido"
+        else
+            log "WARNING" "El archivo puede no ser un ejecutable válido, continuando..."
+        fi
     else
-        log "WARNING" "El archivo puede no ser un ejecutable válido, continuando..."
-        return 0
+        # Verificación alternativa: verificar magic numbers ELF
+        local magic=$(hexdump -C "$TEMP_FILE" 2>/dev/null | head -n 1 | cut -d' ' -f2-5)
+        if echo "$magic" | grep -q "7f 45 4c 46"; then
+            log "SUCCESS" "Archivo verificado como ejecutable ELF válido"
+        else
+            log "WARNING" "No se pudo verificar el tipo de archivo, continuando..."
+        fi
     fi
+    
+    return 0
 }
 
 # Función para instalar el binario
