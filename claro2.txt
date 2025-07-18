@@ -11,3 +11,11 @@ https://gamepack.portal.shop
 https://assets.portal.shop
 https://omicron.banreservas.com:5443
 http://claro.clubapps.com.do
+https://facebook.com
+https://instagram.com
+https://fbcdn.net
+https://cdninstagram.com
+http://googleapis.com
+http://google.com
+http://gstatic.com
+http://googleusercontent.com
